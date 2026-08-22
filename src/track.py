@@ -27,11 +27,12 @@ def build_arg_parser():
     p.add_argument("--video", required=True, help="Path to input video")
     p.add_argument("--out", required=True, help="Path to output CSV of trajectories")
     p.add_argument("--model", default="yolov8s.pt", help="YOLO checkpoint")
-    p.add_argument("--tracker", default="bytetrack.yaml", help="Tracker config (bytetrack.yaml or botsort.yaml)")
+    p.add_argument("--tracker", default="configs/botsort_aerial.yaml", help="Tracker config (bytetrack.yaml or botsort.yaml)")
     p.add_argument("--imgsz", type=int, default=1280, help="Inference image size")
-    p.add_argument("--conf", type=float, default=0.25, help="Detection confidence threshold")
+    p.add_argument("--conf", type=float, default=0.35, help="Detection confidence threshold")
     p.add_argument("--device", default=0, help="CUDA device id or 'cpu'")
     p.add_argument("--save-video", action="store_true", help="Save annotated output video")
+    p.add_argument("--max-frames", type=int, default=None, help="Stop after N frames (for quick iteration)")
     return p
 
 
@@ -62,6 +63,8 @@ def main():
         )
 
         for frame_idx, r in enumerate(results):
+            if args.max_frames and frame_idx >= args.max_frames:
+                break
             if r.boxes is None or r.boxes.id is None:
                 continue
             boxes = r.boxes.xyxy.cpu().numpy()
