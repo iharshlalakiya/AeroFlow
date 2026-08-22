@@ -11,16 +11,19 @@ from pathlib import Path
 
 from ultralytics import YOLO
 
-# VisDrone class id -> our required taxonomy
+# VisDrone class id -> our required taxonomy (used as a secondary "taxonomy" column;
+# nothing is filtered out at detection time, every VisDrone class is tracked and kept)
 VISDRONE_TO_TAXONOMY = {
-    0: "pedestrian",       # pedestrian
-    1: "pedestrian",       # people (crowd/group)
-    3: "car",               # car
+    0: "pedestrian",        # pedestrian
+    1: "pedestrian",        # people (crowd/group)
+    2: "motorcycle",        # bicycle (closest two-wheeler bucket)
+    3: "car",                # car
     4: "LGV",                # van -> light goods vehicle
-    5: "truck",             # truck
+    5: "truck",              # truck
+    6: "motorcycle",        # tricycle (closest two-wheeler bucket)
+    7: "motorcycle",        # awning-tricycle
     8: "bus",                # bus
     9: "motorcycle",        # motor
-    # 2 bicycle, 6 tricycle, 7 awning-tricycle: not in our taxonomy, skipped
 }
 
 
@@ -49,7 +52,8 @@ def main():
 
     with open(out_path, "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["frame", "track_id", "class", "conf", "x1", "y1", "x2", "y2", "cx", "cy"])
+        writer.writerow(["frame", "track_id", "raw_class", "taxonomy_class", "conf",
+                          "x1", "y1", "x2", "y2", "cx", "cy"])
 
         results = model.track(
             source=str(video_path),
@@ -57,7 +61,6 @@ def main():
             imgsz=args.imgsz,
             conf=args.conf,
             device=args.device,
-            classes=list(VISDRONE_TO_TAXONOMY.keys()),
             persist=True,
             stream=True,
             save=args.save_video,
@@ -77,8 +80,9 @@ def main():
             for box, tid, cls, conf in zip(boxes, ids, clss, confs):
                 x1, y1, x2, y2 = box
                 cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
-                label = VISDRONE_TO_TAXONOMY.get(cls, "unknown")
-                writer.writerow([frame_idx, tid, label, round(float(conf), 4),
+                raw_label = model.names[int(cls)]
+                taxonomy_label = VISDRONE_TO_TAXONOMY.get(int(cls), "unknown")
+                writer.writerow([frame_idx, tid, raw_label, taxonomy_label, round(float(conf), 4),
                                   round(float(x1), 1), round(float(y1), 1),
                                   round(float(x2), 1), round(float(y2), 1),
                                   round(float(cx), 1), round(float(cy), 1)])
