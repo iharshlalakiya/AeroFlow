@@ -65,3 +65,83 @@ detections only.
 | Track continuity | 0.648 | 0.918 |
 
 See the write-up for how these were achieved and the limitations that remain.
+
+## Level 2 — Object-Level Insight
+
+**Level 2 write-up:** [`docs/level2_writeup.md`](docs/level2_writeup.md)
+
+Adds fine-grained classification and real-unit kinematics to the Level 1 trajectory table.
+
+### Level 2 pipeline
+
+```
+intersection_tracks_smooth.csv  ──┐
+multiroad_tiled_smooth.csv      ──┤
+                                   level2_pipeline.py
+                                    ├── calibrate_scale.py    (px/m from vehicle widths)
+                                    ├── consolidate_class.py  (stable label + subclass)
+                                    └── compute_kinematics.py (velocity/accel/heading)
+                                   │
+           intersection_tracks_l2.csv   multiroad_tiled_l2.csv
+```
+
+```bash
+venv\Scripts\python src\level2_pipeline.py          # both datasets
+venv\Scripts\python src\level2_pipeline.py --intersection
+venv\Scripts\python src\level2_pipeline.py --multiroad
+```
+
+### Level 2 output schema
+
+```
+frame, track_id, raw_class, taxonomy_class, conf,
+x1, y1, x2, y2, cx, cy, interpolated, class,
+track_class, subclass,
+smoothed_cx, smoothed_cy,
+vx_ms, vy_ms, speed_kmh, accel_ms2, heading_deg
+```
+
+| New column    | Unit | Description |
+|---|---|---|
+| `track_class` | —    | Stable per-track class (confidence-weighted majority vote) |
+| `subclass`    | —    | `HGV` / `rigid_truck` for truck tracks; NaN elsewhere |
+| `smoothed_cx` | px   | Savitzky-Golay smoothed centroid x |
+| `smoothed_cy` | px   | Savitzky-Golay smoothed centroid y |
+| `vx_ms`       | m/s  | East-component velocity |
+| `vy_ms`       | m/s  | South-component velocity |
+| `speed_kmh`   | km/h | Scalar speed |
+| `accel_ms2`   | m/s² | Scalar acceleration |
+| `heading_deg` | °    | Direction of travel (0 = north, clockwise) |
+
+### Level 2 results
+
+**Scale calibration** (vehicle-width prior method):
+
+| Scene        | px/m  | m/px   | Implied AGL |
+|---|---|---|---|
+| Intersection | 50.65 | 0.0197 | ~40 m       |
+| Multi-road   | 14.89 | 0.0672 | ~133 m      |
+
+**Speed by class — Intersection (signalised queue):**
+
+| Class      | Median (km/h) | p95 (km/h) |
+|---|---|---|
+| motorcycle | 6.6           | 19.4       |
+| car        | 0.8           | 14.2       |
+| pedestrian | 1.2           | 12.6       |
+| LGV        | 1.8           | 16.7       |
+| truck      | 0.5           | 4.9        |
+| bus        | 0.2           | 2.0        |
+
+**Speed by class — Multi-road (mixed arterial):**
+
+| Class      | Median (km/h) | p95 (km/h) |
+|---|---|---|
+| motorcycle | 22.0          | 77.5       |
+| bus        | 11.5          | 26.2       |
+| car        | 4.2           | 27.6       |
+| pedestrian | 2.0           | 43.4*      |
+| LGV        | 1.1           | 22.5       |
+| truck      | 1.8           | 20.6       |
+
+*p95 includes noise from short tracks near tile boundaries; median is unaffected.
