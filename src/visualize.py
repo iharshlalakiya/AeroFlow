@@ -38,6 +38,8 @@ def main():
     p.add_argument("--tracks", required=True)
     p.add_argument("--out", required=True)
     p.add_argument("--max-frames", type=int, default=None, help="Limit frames for a quick preview clip")
+    p.add_argument("--trail", type=int, default=150, help="How many past points to draw per track")
+    p.add_argument("--trail-thickness", type=int, default=2)
     args = p.parse_args()
 
     tracks = load_tracks(args.tracks)
@@ -70,12 +72,13 @@ def main():
             cv2.putText(frame, f"{cls}#{tid}", (int(x1), int(y1) - 6),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
 
-            trail[tid].append((int(cx), int(cy)))
-            trail[tid] = trail[tid][-30:]
+            trail[tid].append(((int(cx), int(cy)), color))
+            trail[tid] = trail[tid][-args.trail:]
 
         for tid, pts in trail.items():
             for i in range(1, len(pts)):
-                cv2.line(frame, pts[i - 1], pts[i], (255, 255, 255), 1)
+                cv2.line(frame, pts[i - 1][0], pts[i][0], pts[i][1],
+                         args.trail_thickness, cv2.LINE_AA)
 
         out.write(frame)
         frame_idx += 1
