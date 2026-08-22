@@ -33,6 +33,14 @@ reduction in identity churn.
   constraints.
 - Pretrained on ground-level COCO imagery; may still under-detect very small/distant objects
   in the top-down view compared to a model fine-tuned on this footage.
+- **Motorcycle recall is measurably weak**: on the Intersection run, motorcycles account for
+  515/200,971 detections (71 unique tracks) at 0.43 average confidence, vs. 183,408 car
+  detections at 0.61 average confidence. Motorcycles have a much smaller top-down silhouette
+  than the ground-level, side-on motorcycle images COCO was trained on, so detections flicker
+  near the confidence threshold and tracks fragment or drop. Fixing this needs either a
+  lower per-class confidence threshold for motorcycles specifically, higher-resolution tiled
+  inference (e.g. SAHI) at the cost of speed, or fine-tuning on aerial motorcycle examples —
+  none attempted here given time constraints.
 - Full quantitative ID-switch benchmarking against ground truth wasn't performed (no
   annotations provided); the fix was validated qualitatively via track-count sanity checks
   and visual review of the annotated output video.
