@@ -1,0 +1,23 @@
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# large media - do not commit
+data/raw_video/*
+!data/raw_video/.gitkeep
+data/srt/*
+!data/srt/.gitkeep
+data/output/*
+!data/output/.gitkeep
+*.mp4
+*.MP4
+*.mov
+*.MOV
+
+# model weights
+*.pt
+*.pth
+weights/
+
+.env
