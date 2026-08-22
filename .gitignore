@@ -21,3 +21,6 @@ data/output/*
 weights/
 
 .env
+
+# generated PDFs are re-buildable from the markdown
+docs/*.pdf
