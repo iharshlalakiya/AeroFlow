@@ -45,6 +45,20 @@ reduction in identity churn.
   annotations provided); the fix was validated qualitatively via track-count sanity checks
   and visual review of the annotated output video.
 
+## Explored alternative: VisDrone-pretrained weights
+Tested `mshamrai/yolov8s-visdrone` (VisDrone2019-pretrained YOLOv8s) as an alternative
+detector, since its class set includes `van` (maps to LGV) and `motor` (motorcycle) — gaps
+in the COCO taxonomy. Initial test (1 min, unfiltered classes, conf=0.3) showed severe track
+fragmentation: 39.8% of 1,303 tracks lasted ≤3 frames. After the same tuning approach applied
+to the COCO pipeline (conf 0.3→0.45, higher track/new-track thresholds, dropping noisy
+tricycle/bicycle/people classes), fragmentation improved (1,303→742 tracks, ≤3-frame tracks
+39.8%→33.3%) but remained substantially noisier than the COCO model — 322 unique motorcycle
+tracks in 1 minute vs. COCO's 114 across the entire 6.7-minute video, a ~17x higher rate,
+indicating continued false-positive/flicker issues rather than genuine extra recall. Given
+time constraints, the COCO-based pipeline was kept as the submitted result; VisDrone remains
+a promising direction for LGV/motorcycle recall with further tuning (per-class confidence
+thresholds, larger VisDrone variant, or fine-tuning on this footage) as future work.
+
 ## Deliverables
 - `src/track.py` — detection + tracking pipeline
 - `src/visualize.py` — overlays trajectories on the source video for visual verification
