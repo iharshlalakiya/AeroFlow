@@ -24,3 +24,9 @@ weights/
 
 # generated PDFs are re-buildable from the markdown
 docs/*.pdf
+
+# ultralytics run artifacts
+runs/
+
+# claude code local state
+.claude/
