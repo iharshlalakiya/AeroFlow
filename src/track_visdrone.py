@@ -11,17 +11,14 @@ from pathlib import Path
 
 from ultralytics import YOLO
 
-# VisDrone class id -> our required taxonomy (used as a secondary "taxonomy" column;
-# nothing is filtered out at detection time, every VisDrone class is tracked and kept)
+# VisDrone class id -> our required taxonomy.
+# 2 bicycle, 1 people, 6 tricycle, 7 awning-tricycle excluded: validated as noisy/false-positive
+# prone on this footage (severe track fragmentation observed when included).
 VISDRONE_TO_TAXONOMY = {
     0: "pedestrian",        # pedestrian
-    1: "pedestrian",        # people (crowd/group)
-    2: "motorcycle",        # bicycle (closest two-wheeler bucket)
     3: "car",                # car
     4: "LGV",                # van -> light goods vehicle
     5: "truck",              # truck
-    6: "motorcycle",        # tricycle (closest two-wheeler bucket)
-    7: "motorcycle",        # awning-tricycle
     8: "bus",                # bus
     9: "motorcycle",        # motor
 }
@@ -32,9 +29,9 @@ def build_arg_parser():
     p.add_argument("--video", required=True)
     p.add_argument("--out", required=True)
     p.add_argument("--model", default="models/best.pt")
-    p.add_argument("--tracker", default="configs/botsort_aerial.yaml")
+    p.add_argument("--tracker", default="configs/botsort_visdrone.yaml")
     p.add_argument("--imgsz", type=int, default=960)
-    p.add_argument("--conf", type=float, default=0.3)
+    p.add_argument("--conf", type=float, default=0.45)
     p.add_argument("--device", default=0)
     p.add_argument("--save-video", action="store_true")
     p.add_argument("--max-frames", type=int, default=None)
@@ -61,6 +58,7 @@ def main():
             imgsz=args.imgsz,
             conf=args.conf,
             device=args.device,
+            classes=list(VISDRONE_TO_TAXONOMY.keys()),
             persist=True,
             stream=True,
             save=args.save_video,
